@@ -4,13 +4,9 @@ const {engine} = require("express-handlebars");
 const basicAuth = require("express-basic-auth");
 const bodyParser = require("body-parser");
 const path = require("path");
-// const passport = require("passport")
-// const session = require('express-session')
-// Set up express and environment
 const app = express();
 require("dotenv").config();
 const config = require("./Stores/config.json").development;
-// [process.env.NODE_ENV || "development"];
 
 // Require User create modules
 const AuthChallenger = require("./AuthChallenger");
@@ -32,14 +28,11 @@ app.set("views", viewsPath);
 app.use(express.static("public"));
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
-// app.use(passport.initialize())
-// app.use(passport.session())
 app.use(
   basicAuth({
     authorizeAsync: true,
     authorizer: AuthChallenger(knex),
     challenge: true,
-    realm: "Note Taking with knex",
   })
 );
 
@@ -54,34 +47,7 @@ app.get("/", (req, res) => {
   res.render("index", {
     user: req.auth.user,
   });
-  // res.send("hi");
 });
-
-// Setup route to handler to send index page
-// app.get("/", async (req, res) => {
-//   let data = await noteService.list(req.auth.user);
-
-//   let array = data.map((x) => x.content);
-//   console.log(array);
-
-//   res.render("index", {
-//     user: req.auth.user,
-//     notes: array,
-//   });
-// });
-
-// Promise version - load notes in response - client side rendering
-// noteService.list(req.auth.user).then((data) => {
-//   console.log(data);
-
-//   let array = data.map((x) => x.content);
-//   console.log(array);
-
-//   res.render("index", {
-//     user: req.auth.user,
-//     notes: array,
-//   });
-// });
 
 // Set up routes to /api/notes
 app.use("/api/notes/", new NoteRouter(noteService).router());
