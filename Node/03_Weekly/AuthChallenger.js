@@ -2,7 +2,7 @@
 
 const AuthChallenger = (users) => {
   // This will return True or False
-  return (username, password, callback) => {
+  return async (username, password, callback) => {
     // This is the password and username that we receive when prompted by our HTML file.
     const knex = require("knex")({
       client: "postgresql",

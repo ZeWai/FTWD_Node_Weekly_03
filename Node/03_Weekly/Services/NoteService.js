@@ -3,19 +3,17 @@ class NoteService {
     this.knex = knex;
   }
 
-  async add(note, user) {
-    let query = await this.knex
+  add(note, user) {
+    let query = this.knex
       .select("id")
       .from("users")
       .where("users.username", user);
-
-    console.log(query);
-
+      console.log("678",query)
     if (query.length === 1) {
-      await this.knex
+      return this.knex
         .insert({
           content: note,
-          user_id: query[0].id,
+          users_id: query[0].id,
         })
         .into("notes");
     } else {
@@ -24,42 +22,17 @@ class NoteService {
   }
 
   list(user) {
-    if (typeof user !== "undefined") {
-      let query = this.knex
-        .select("notes.id", "notes.content")
-        .from("notes")
-        .innerJoin("users", "notes.user_id", "users.id")
-        .where("users.username", user)
-        .orderBy("notes.id", "asc");
-
-      return query.then((rows) => {
-        console.log(rows, "pp");
-        return rows.map((row) => ({
-          id: row.id,
-          content: row.content,
-        }));
-      });
-    } else {
-      let query = this.knex
-        .select("users.username", "notes.id", "content")
-        .from("notes")
-        .innerJoin("users", "notes.user_id", "users.id");
-
-      return query.then((rows) => {
-        console.log(rows);
-        const result = {};
-        rows.forEach((row) => {
-          if (typeof result[row.username] === "undefined") {
-            result[row.username] = [];
-          }
-          result[row.username].push({
-            id: row.id,
-            content: row.content,
-          });
-        });
-        return result;
-      });
-    }
+    console.log(user)
+    return this.knex.select('id').from('users').where('username',user).then((data)=>{
+      if (data.length >0){
+        return this.knex.select("*").from('notes')
+        .ehere('users.id',function(){
+          return this.select('id').from('users').where('username',user)
+        }).orderBy('id');
+            }else{
+              throw new Error('Cannot list notes to a non-existing user')
+            }
+    })
   }
   update(id, note, user) {
     let query = this.knex

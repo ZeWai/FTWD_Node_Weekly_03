@@ -5,8 +5,8 @@ var notesTemplate = Handlebars.compile(
   `
         {{#each notes}}
         <div class="note">
-            <span class="input"><textarea data-horse="pony" data-id="{{ @index }}"> {{ this }}</textarea></span>
-            <button class="remove btn btn-xs" data-id="{{ @index }}"><i class = "fa fa-trash" aria-hidden="true"></i></button>
+            <span class="input"><textarea data-id="{{ id }}"> {{ content }}</textarea></span>
+            <button class="remove btn btn-xs" data-id="{{ id }}"><i class = "fa fa-trash" aria-hidden="true"></i></button>
             </div>
             {{/each}}
         `
@@ -25,13 +25,14 @@ const reloadNotes = (notes) => {
 
 // This function is used and defined to make a message appear on the dom when saving our note.
 const beginSaving = (target) => {
-  // code here
+  $(target).prop("disabled", true);
+  $(".saving").show();
 };
 
 // This function is used and defined to make a message disappear on the dom after saving our note.
 const endSaving = (target) => {
   $(target).prop("disabled", true);
-  $(".saving").show();
+  $(".saving").hide();
 };
 
 // Document on ready function, when the document has fully loaded we can do everything within this block of code.

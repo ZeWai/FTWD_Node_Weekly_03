@@ -8,7 +8,6 @@
 // 1) Import all required modules
 
 // In-built Node Modules (filesystem and path)
-const fs = require("fs")
 const path = require("path")
 // NPM installed modules
 const express = require("express");
@@ -22,17 +21,17 @@ const app = express();
 const config = require("./Stores/config.json").development;
 require("dotenv").config();
 const AuthChallenger = require("./AuthChallenger");
-const NoteService = require("./Service/NoteService");
-const NoteRouter = require("./Router/NoteRouter");
+const NoteService = require("./Services/NoteService");
+const NoteRouter = require("./Routers/NoteRouter");
 const knexFile = require('./knexfile').development;
 const knex = require('knex')(knexFile);
 /** # Configure Express #
 /*  ====================== */
 // 2) Configure Express
-app.engine("handlebars", engine());
+app.engine("handlebars", engine({defaultLayout:"main"}));
 app.set("view engine", "handlebars");
 app.set('views', path.join(__dirname, "./views"));
-
+require('dotenv').config()
 
 // Set up handlebars (set up engine and register handlebars with express)
 // Look at the example from the lecture: https://xccelerate.talentlms.com/unit/view/id:2002
@@ -55,7 +54,6 @@ app.use(
 // 3) Past in the file into the noteservice class
 const noteService = new NoteService(knex);
 app.get("/", (req, res) => {
-  console.log(req.auth.user);
   res.render("index", {
     user: req.auth.user,
   });
