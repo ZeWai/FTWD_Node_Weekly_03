@@ -3,63 +3,94 @@ class NoteService {
     this.knex = knex;
   }
 
+  async add(note, user) {
+    let query = await this.knex
+      .select("id")
+      .from("users")
+      .where("users.username", user);
+
+    console.log(query);
+
+    if (query.length === 1) {
+      await this.knex
+        .insert({
+          content: note,
+          user_id: query[0].id,
+        })
+        .into("notes");
+    } else {
+      throw new Error(`Cannot add a note to a user that doesn't exist!`);
+    }
+  }
+
   list(user) {
-    console.log(user)
-      return this.knex.select('id').from('users').where('username', user).then((data) => {
-            if (data.length > 0) {
-                return this.knex.select('*').from('notes')
-                    .where('users_id', function() {
-                        return this.select('id').from('users').where('username', user)
-                    }).orderBy('id')
-            } else {
-                throw new Error('Cannot list notes to a non-existing user')
-            }
-        })
-  }
+    if (typeof user !== "undefined") {
+      let query = this.knex
+        .select("notes.id", "notes.content")
+        .from("notes")
+        .innerJoin("users", "notes.user_id", "users.id")
+        .where("users.username", user)
+        .orderBy("notes.id", "asc");
 
-  add(note, user) {
-    return this.knex.select('id').from('users').where('username', user).then((data) => {
-            if (data.length > 0) {
-                return this.knex('notes').insert({
-                    note: note,
-                    users_id: function() {
-                        this.select('id').from('users').where('username', user)
-                    },
-                    important: false
-                }).then(() => this.list(user))
-            } else {
-                throw new Error('Cannot add notes to a non-existing user')
-            }
-        })
-  }
+      return query.then((rows) => {
+        console.log(rows, "pp");
+        return rows.map((row) => ({
+          id: row.id,
+          content: row.content,
+        }));
+      });
+    } else {
+      let query = this.knex
+        .select("users.username", "notes.id", "content")
+        .from("notes")
+        .innerJoin("users", "notes.user_id", "users.id");
 
+      return query.then((rows) => {
+        console.log(rows);
+        const result = {};
+        rows.forEach((row) => {
+          if (typeof result[row.username] === "undefined") {
+            result[row.username] = [];
+          }
+          result[row.username].push({
+            id: row.id,
+            content: row.content,
+          });
+        });
+        return result;
+      });
+    }
+  }
   update(id, note, user) {
-    return this.knex.select('id').from('users').where('username', user).then((data) => {
-            if (data.length !== 0) {
-                return this.list(user).then((data) => {
-                    if (data[id] !== undefined) {
-                        return this.knex('notes').where('id', data[id]['id']).update({ note: note })
-                    } else throw new Error('Cannot update notes of an incorrect index')
-                }).then(() => this.list(user))
-            } else {
-                throw new Error('Cannot update notes to a non-existing user')
-            }
-        })
+    let query = this.knex
+      .select("id")
+      .from("users")
+      .where("users.username", user);
+
+    return query.then((rows) => {
+      if (rows.length === 1) {
+        return this.knex("notes").where("id", id).update({
+          content: note,
+        });
+      } else {
+        throw new Error(`Cannot update a note if the user doesn't exist!`);
+      }
+    });
   }
   remove(id, user) {
-     return this.knex.select('id').from('users').where('username', user).then((data) => {
-            if (data.length > 0) {
-                return this.list(user).then((data) => {
-                    if (data[id] !== undefined) {
-                        return this.knex('notes').where('id', data[id]['id']).del()
-                    } else throw new Error('Cannot remove notes of an incorrect index')
-                }).then(() => this.list(user))
+    let query = this.knex
+      .select("id")
+      .from("users")
+      .where("users.username", user);
 
-            } else {
-                throw new Error('Cannot remove notes from a non-existing user')
-            }
-        })
-    }
+    return query.then((rows) => {
+      if (rows.length === 1) {
+        return this.knex("notes").where("id", id).del();
+      } else {
+        throw new Error(`Cannot remove a note when the user doesn't exist!`);
+      }
+    });
+  }
 }
 
 module.exports = NoteService;

@@ -1,94 +1,91 @@
-/**********************************************
- * Notetaking Application Challenge
- * ==================================
- ***********************************************/
-
-/** # Import all libraries  #
-/*  ====================== */
-// 1) Import all required modules
-
-// In-built Node Modules (filesystem and path)
-const path = require("path")
-// NPM installed modules
+// Require Node Packages
 const express = require("express");
+const handlebars = require("express-handlebars");
 const basicAuth = require("express-basic-auth");
-const { engine } = require("express-handlebars");
 const bodyParser = require("body-parser");
+const path = require("path");
+
+// Set up express and environment
 const app = express();
-// Set up your application, import the required packages
-// Capitalize when it is a class
-
-const config = require("./Stores/config.json").development;
 require("dotenv").config();
+const config = require("./config.json").development;
+// [process.env.NODE_ENV || "development"];
+
+// Require User create modules
 const AuthChallenger = require("./AuthChallenger");
-const NoteService = require("./Services/NoteService");
-const NoteRouter = require("./Routers/NoteRouter");
-const knexFile = require('./knexfile').development;
-const knex = require('knex')(knexFile);
-/** # Configure Express #
-/*  ====================== */
-// 2) Configure Express
-app.engine("handlebars", engine({defaultLayout:"main"}));
+const NoteService = require("./NoteService/NoteService");
+const NoteRouter = require("./NoteRouter/NoteRouter");
+
+// Set up connection to postgres database via knex
+const knexConfig = require("./knexfile").development;
+const knex = require("knex")(knexConfig);
+
+// Setup handlebars as express template engine
+const viewsPath = path.join(__dirname, "./views");
+
+app.engine("handlebars", handlebars({ defaultLayout: "main" }));
 app.set("view engine", "handlebars");
-app.set('views', path.join(__dirname, "./views"));
-require('dotenv').config()
+app.set("views", viewsPath);
 
-// Set up handlebars (set up engine and register handlebars with express)
-// Look at the example from the lecture: https://xccelerate.talentlms.com/unit/view/id:2002
-
-// Set up Express
+// Setup middleware and serve public folder
 app.use(express.static("public"));
 app.use(express.urlencoded({ extended: false }));
-// Set up any middleware required, like express.json()
 app.use(express.json());
-// Set up and configure express-basic-auth using the AuthChallenger
+
 app.use(
   basicAuth({
     authorizeAsync: true,
     authorizer: AuthChallenger(knex),
     challenge: true,
+    realm: "Note Taking with knex",
   })
 );
-/** # Set up NoteService  #
-/*  ====================== */
-// 3) Past in the file into the noteservice class
+
+//Note that the authorizer function above is expected to be synchronous. This is the default behavior, you can pass authorizeAsync: true in the options object to indicate that your authorizer is asynchronous. In this case it will be passed a callback as the third parameter, which is expected to be called by standard node convention with an error and a boolean to indicate if the credentials have been approved or not.
+
+// Setup noteService
+
 const noteService = new NoteService(knex);
 app.get("/", (req, res) => {
+  console.log("get request ");
+  console.log(req.auth.user);
   res.render("index", {
     user: req.auth.user,
   });
+  // res.send("hi");
 });
 
-/** # Set up basic express server  #
-/*  ====================== */
-// 4) Set up basic express server
-// Set up your route handler for '/' ==> send and index page to the users
-//app.get("/", (req, res) => {
-  // Create a callback function
-  // You always need a .then to
-//});
+// Setup route to handler to send index page
+// app.get("/", async (req, res) => {
+//   let data = await noteService.list(req.auth.user);
 
-// DONT DO STEP FOUR UNTIL NEXT WEEK
-/** # Set up authentication   #
-/*  ====================== */
-// 5) Set up authentication
-// Set up basic auth
-// DONT DO THE ABOVE PART UNTIL NEXT WEEK
+//   let array = data.map((x) => x.content);
+//   console.log(array);
 
-/** # Set up routes from noteservice  #
-/*  ====================== */
-// 6) Create a new instance of noteService and pass the file path/to/the/file where you want the service to read from and write to.
+//   res.render("index", {
+//     user: req.auth.user,
+//     notes: array,
+//   });
+// });
+
+// Promise version - load notes in response - client side rendering
+// noteService.list(req.auth.user).then((data) => {
+//   console.log(data);
+
+//   let array = data.map((x) => x.content);
+//   console.log(array);
+
+//   res.render("index", {
+//     user: req.auth.user,
+//     notes: array,
+//   });
+// });
+
+// Set up routes to /api/notes
 app.use("/api/notes/", new NoteRouter(noteService).router());
 
-/** #  Set up Note Router  #
-/*  ====================== */
-// 7) Set up the NoteRouter - handle the requests and responses in the note, read from a file and return the actual data, get the note from your JSON file and return to the clients browser.
-// any notes that go to api/routes will go to noterouter
-// /api/notes/:id
-
-// make your application listen to a port of your choice.
-app.listen(config.port, () => {
-  console.log("Listening on 3000");
-});
+app.listen(config.port, () =>
+  console.log(`Note Taking application listening to ${config.port}!`)
+);
 
 module.exports.app = app;
