@@ -4,8 +4,8 @@ const {engine} = require("express-handlebars");
 const basicAuth = require("express-basic-auth");
 const bodyParser = require("body-parser");
 const path = require("path");
-// const passport = require("passport")
-// const session = require('express-session')
+const passport = require("passport")
+const session = require('express-session')
 // Set up express and environment
 const app = express();
 require("dotenv").config();
@@ -32,21 +32,27 @@ app.set("views", viewsPath);
 app.use(express.static("public"));
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
-// app.use(passport.initialize())
-// app.use(passport.session())
-app.use(
-  basicAuth({
-    authorizeAsync: true,
-    authorizer: AuthChallenger(knex),
-    challenge: true,
-    realm: "Note Taking with knex",
-  })
-);
+app.use(session({
+    secret: process.env.SECRET,
+    resave: false,
+    saveUninitialized: true
+}));
+app.use(passport.initialize())
+app.use(passport.session())
+passport.use(new LocalStrategy)
+//app.use(
+//  basicAuth({
+//    authorizeAsync: true,
+//    authorizer: AuthChallenger(knex),
+//    challenge: true,
+//  })
+//);
 
 //Note that the authorizer function above is expected to be synchronous. This is the default behavior, you can pass authorizeAsync: true in the options object to indicate that your authorizer is asynchronous. In this case it will be passed a callback as the third parameter, which is expected to be called by standard node convention with an error and a boolean to indicate if the credentials have been approved or not.
 
 // Setup noteService
 
+const login = require('./passport')
 const noteService = new NoteService(knex);
 app.get("/", (req, res) => {
   console.log("get request ");
