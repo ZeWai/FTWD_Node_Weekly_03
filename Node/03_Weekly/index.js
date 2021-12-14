@@ -1,20 +1,21 @@
 // Require Node Packages
 const express = require("express");
-const handlebars = require("express-handlebars");
+const {engine} = require("express-handlebars");
 const basicAuth = require("express-basic-auth");
 const bodyParser = require("body-parser");
 const path = require("path");
-
+// const passport = require("passport")
+// const session = require('express-session')
 // Set up express and environment
 const app = express();
 require("dotenv").config();
-const config = require("./config.json").development;
+const config = require("./Stores/config.json").development;
 // [process.env.NODE_ENV || "development"];
 
 // Require User create modules
 const AuthChallenger = require("./AuthChallenger");
-const NoteService = require("./NoteService/NoteService");
-const NoteRouter = require("./NoteRouter/NoteRouter");
+const NoteService = require("./Services/NoteService");
+const NoteRouter = require("./Routers/NoteRouter");
 
 // Set up connection to postgres database via knex
 const knexConfig = require("./knexfile").development;
@@ -23,7 +24,7 @@ const knex = require("knex")(knexConfig);
 // Setup handlebars as express template engine
 const viewsPath = path.join(__dirname, "./views");
 
-app.engine("handlebars", handlebars({ defaultLayout: "main" }));
+app.engine("handlebars", engine({ defaultLayout: "main" }));
 app.set("view engine", "handlebars");
 app.set("views", viewsPath);
 
@@ -31,7 +32,8 @@ app.set("views", viewsPath);
 app.use(express.static("public"));
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
-
+// app.use(passport.initialize())
+// app.use(passport.session())
 app.use(
   basicAuth({
     authorizeAsync: true,

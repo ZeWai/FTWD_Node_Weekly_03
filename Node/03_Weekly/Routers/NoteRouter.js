@@ -21,15 +21,12 @@ class NoteRouter {
     return this.noteService
       .list(req.auth.user)
       .then((notes) => {
-        console.log("Getting");
-        console.log(notes);
         res.json(notes);
       })
       .catch((err) => res.status(500).json(err));
   }
 
   post(req, res) {
-    console.log("posting");
     return this.noteService
       .add(req.body.note, req.auth.user)
       .then(() => this.noteService.list(req.auth.user))

@@ -33,7 +33,6 @@ class NoteService {
         .orderBy("notes.id", "asc");
 
       return query.then((rows) => {
-        console.log(rows, "pp");
         return rows.map((row) => ({
           id: row.id,
           content: row.content,
